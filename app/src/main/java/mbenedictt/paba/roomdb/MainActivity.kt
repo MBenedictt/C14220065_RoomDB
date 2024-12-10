@@ -3,6 +3,7 @@ package mbenedictt.paba.roomdb
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -16,9 +17,11 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import mbenedictt.paba.roomdb.database.daftarBelanja
 import mbenedictt.paba.roomdb.database.daftarBelanjaDB
+import mbenedictt.paba.roomdb.database.historyBarangDB
 
 class MainActivity : AppCompatActivity() {
     private lateinit var DB : daftarBelanjaDB
+    private lateinit var DBHistory : historyBarangDB
     private lateinit var adapterDaftar : adapterDaftar
     private var arDaftar : MutableList<daftarBelanja> = mutableListOf()
 
@@ -33,6 +36,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         DB = daftarBelanjaDB.getDatabase(this)
+
         val _fabAdd = findViewById<FloatingActionButton>(R.id.fabAdd)
 
         _fabAdd.setOnClickListener {
@@ -45,6 +49,14 @@ class MainActivity : AppCompatActivity() {
         _rvDaftar.layoutManager = LinearLayoutManager(this)
         _rvDaftar.adapter = adapterDaftar
 
+        DBHistory = historyBarangDB.getDatabase(this)
+
+        val _btnHistory = findViewById<Button>(R.id.btnHistory)
+        _btnHistory.setOnClickListener {
+            val intent = Intent(this, HistoryBarang::class.java)
+            startActivity(intent)
+        }
+
         adapterDaftar.setOnItemClickCallback(
             object : adapterDaftar.OnItemClickCallback {
                 override fun delData(dtBelanja: daftarBelanja) {
@@ -54,6 +66,14 @@ class MainActivity : AppCompatActivity() {
                         withContext(Dispatchers.Main) {
                             adapterDaftar.isiData(daftar)
                         }
+                    }
+                }
+
+                override fun finishData(dtBelanja: daftarBelanja) {
+                    delData(dtBelanja)
+
+                    CoroutineScope(Dispatchers.IO).async {
+                        DBHistory.funhistoryBarangDAO().insert(dtBelanja)
                     }
                 }
             }
